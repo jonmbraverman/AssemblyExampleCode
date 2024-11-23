@@ -1,0 +1,51 @@
+;*******************************************************************************
+; MSP430 variable example for IAR Assembler
+;*******************************************************************************
+#include "msp430.h"                     ; #define controlled include file
+
+        NAME    main                    ; module name
+
+        PUBLIC  main                    ; make the main label vissible
+
+_byte   EQU 1
+_word   EQU 2
+
+        ; RAM Table
+ORG     0200h
+word1  DS _word
+array1  DS (_word * 32)  ; 16-bit 32 element array
+byte1  DS _byte
+byte2  DS _byte
+
+        ORG     0FFFEh
+        DC16    init                    ; set reset vector to 'init' label
+
+        RSEG    CSTACK                  ; pre-declaration of segment
+        RSEG    CODE                    ; place program in 'CODE' segment
+
+
+init:   NOP                             
+        mov     #0000h, R5            ; initializes the counter  
+        mov     #01234h, R4	      ; lSB of the 32 bit counter        
+
+main:   NOP                             ; main program
+        mov.b R5,&byte1
+        mov.w #0x1234,&byte1
+        mov.w &byte1,&word1
+        mov.w R4, array1(R5)
+        inc.w R4  ; next value
+        add.w #0x02, R5  ; next location
+
+
+        JMP main                         ; jump to current location '$'
+
+
+
+theSub:
+
+        NOP
+        RET
+
+
+
+        END
