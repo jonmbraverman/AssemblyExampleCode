@@ -1,5 +1,5 @@
 ;-------------------------------------------------------------------------------
-; MSP430 Assembler "variable example" for use with TI Code Composer Assmebler
+; MSP430 Assembler "timebase example" for use with TI Code Composer Assmebler
 ;-------------------------------------------------------------------------------*
             .cdecls C,LIST,"msp430.h"       ; Include device header file            
 ;-------------------------------------------------------------------------------
@@ -16,35 +16,69 @@
 ; Hardware Initialization section
 ;-------------------------------------------------------------------------------
 RESET       mov.w   #__STACK_END,SP         ; Initialize stackpointer
+            mov.b   &CALBC1_1MHZ, &BCSCTL1  ; Load calibrated DCO 1MHZ pt 1/2
+            mov.b   &CALDCO_1MHZ, &DCOCTL   ; Load calibrated DCO 1MHZ pt 2/2
 StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
-
+SetupC0     mov.w   #CCIE,&TA0CCTL0            ; 
+            mov.w   #1000,&TA0CCR0            ;
+SetupTA     mov.w   #TASSEL_2+MC_1,&TA0CTL   ; 
+            bis.w   #GIE,SR                 ; 
+SetupP1
+            bis.b  #BIT0, &P1DIR
 ;-------------------------------------------------------------------------------
 ; Variable/register tnitialization section
 ;-------------------------------------------------------------------------------
-			mov.w #0, R5
-			mov.w #01234h, R4
+            mov #0, &runtimems
+            mov #0, &milliseconds
+            mov #0, &tenths
+            mov #0, &tenthscount
+            mov #0, &seconds
+            mov #0, &minutes
+            mov #10, &A_time_delay
 ;-------------------------------------------------------------------------------
 ; Main loop here
 ;-------------------------------------------------------------------------------
 MAIN
-			mov.b R5, &byte1
-			mov.w #0x1234, &byte1
-			mov.w &byte1, &word1
-			mov.b R5,&byte1
-			mov.w #0x1234,&byte1
-			mov.w &byte1,&word1
-			mov.w R4, array1(R5)
-			inc.w R4  ; next value
-			add.w #0x02, R5  ; next location
+
                                             
 			jmp MAIN
-            
-;-------------------------------------------------------------------------------
-; Interrupt Vectors
-;-------------------------------------------------------------------------------
-            .sect   ".reset"                ; MSP430 RESET Vector
-            .short  RESET
 
+
+;-------------------------------------------------------------------------------
+TA0_ISR;    1ms
+;-------------------------------------------------------------------------------
+;	   runtimems increments every ms and increments up to 65536 and resets to 0 (every 65.5536 seconds)
+;	   milliseconds increments every ms and increments up to 1000 and resets to 0 (every second)
+;	   tenths increments every 100 ms and increments up to 10 and resets to 0 (every second)
+;          minutes increments every 1000 ms and increments up to 60 and resets to 0 (every minute)
+
+            add #1,  &runtimems
+            add #1,  &milliseconds
+            add #1,  &tenthscount
+            cmp #999, &milliseconds            
+            jlo donemscount	   
+            mov #0,   &milliseconds
+            add #1, &seconds
+            cmp #59, &seconds
+            jlo donecount
+            add #1, &minutes
+            mov #0, &seconds
+donemscount
+
+
+
+donecount:	    
+	    
+
+            reti                                                  ;
+
+;------------------------------------------------------------------------------
+;           Interrupt Vectors
+;------------------------------------------------------------------------------
+            .sect   ".int09"                ; Timer_A0 Vector
+            .short  TA0_ISR                 ;
+            .sect   ".reset"                ; MSP430 RESET Vector
+            .short  RESET                   ;
 
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
@@ -57,6 +91,7 @@ MAIN
 ;------------------------------------------------------------------------------
 _byte .equ 1
 _word .equ 2
+_long .equ 4
 			; Declaring a variable is a two-step process
 			; 	1) reserve memory with a name (variable)
 			;   2) declare the variable as global to make it "visable"
@@ -67,20 +102,32 @@ _word .equ 2
 			; [keyword to declare the variable as global] 	[name of variable]
 			; .global 										word1
 
-			.bss   word1 , _word				; Reserve a word (2 bytes) named "word1"
-			.global word1
-			
-			.bss  array1 , (_word * 32)
-			.global array1
+			.bss   runtimems , _word			
+			.global runtimems
 
-			.bss   word2 , _word				; Reserve a word (2 bytes) named "word1"
-			.global word2
+			.bss   milliseconds , _word				
+			.global milliseconds
 
-			.bss	byte1, _byte
-			.global byte1
+			.bss   tenths , _word				
+			.global tenths
 
-			.bss	byte2, _byte
-			.global byte2
+			.bss   tenthscount, _word
+			.global tenthscount
 
-			; .bss   ____, _word
-			; .global ____
+			.bss   seconds, _word
+			.global seconds
+
+			.bss   minutes, _word
+			.global minutes
+
+			.bss   hours, _word
+			.global hours
+
+			.bss   A_time_start, _word
+			.global A_time_start
+
+			.bss   A_time_delay, _word
+			.global A_time_delay
+
+            .end
+
