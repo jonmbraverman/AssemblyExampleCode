@@ -1,5 +1,17 @@
 ;-------------------------------------------------------------------------------
-; MSP430 Assembler "variable example" for use with TI Code Composer Assmebler
+; MSP430 ADC Example for use with TI Code Composer Assmebler
+
+;   Modified version of code from TI
+;  
+;                MSP430G2xx3
+;             -----------------
+;         /|\|              XIN|-
+;          | |                 |
+;          --|RST          XOUT|-
+;            |                 |
+;            |      P1.1/INCH_1|<--- Analog Value
+
+;
 ;-------------------------------------------------------------------------------*
             .cdecls C,LIST,"msp430.h"       ; Include device header file            
 ;-------------------------------------------------------------------------------
@@ -17,70 +29,74 @@
 ;-------------------------------------------------------------------------------
 RESET       mov.w   #__STACK_END,SP         ; Initialize stackpointer
 StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
+            bis.b   #DIVS_3,&BCSCTL2        ; SMCLK/8
+setupP1:
+        BIS.B   #001h, &P1DIR           ; P1.0 output
+        
+SetupADC10  
+        mov.w   #INCH_1+ADC10DIV_3,&ADC10CTL1     ; ADC input on P1.1
+        mov.w   #ADC10SHT_3+REFON+ADC10ON+ADC10IE,&ADC10CTL0 ;
+        bis.b   #02h,&ADC10AE0          ; P1.1 ADC10 option select
+        bis.W   #GIE,SR                         ; enable interrupts
 
 ;-------------------------------------------------------------------------------
-; Variable/register Initialization section
+; Variable/register initialization section
 ;-------------------------------------------------------------------------------
-			mov.w #0, R5
-			mov.w #01234h, R4
+
+        MOV.W   #0000h, R14
+        MOV.W   #0000h, R4  
 ;-------------------------------------------------------------------------------
 ; Main loop here
 ;-------------------------------------------------------------------------------
-MAIN
-			mov.b R5, &byte1
-			mov.w #0x1234, &byte1
-			mov.w &byte1, &word1
-			mov.b R5,&byte1
-			mov.w #0x1234,&byte1
-			mov.w &byte1,&word1
-			mov.w R4, array1(R5)
-			inc.w R4  ; next value
-			add.w #0x02, R5  ; next location
-                                            
-			jmp MAIN
-            
-;-------------------------------------------------------------------------------
-; Interrupt Vectors
-;-------------------------------------------------------------------------------
-            .sect   ".reset"                ; MSP430 RESET Vector
-            .short  RESET
 
+MAIN
+
+
+
+
+
+
+        BIT.W   #0001h,R4                   ; if the conversion has already been started do nothing
+        JC      MAIN
+        bis.w   #ENC+ADC10SC,&ADC10CTL0 ; Start sampling/conversion
+        BIS.W   #0001h,R4                   ; set bit to indicate a conversion has been started
+
+
+
+		jmp MAIN
+
+
+
+
+;-------------------------------------------------------------------------------
+; Subroutines here
+;-------------------------------------------------------------------------------
+
+
+
+;-------------------------------------------------------------------------------
+; Interrupt Service Routines here
+;-------------------------------------------------------------------------------
+ADC10_ISR:
+            MOV.W   &ADC10MEM,R14              ; Store value
+            BIC.W   #0001h,R4                  ; Allow a new conversion to take place
+
+            reti        
 
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
 ;-------------------------------------------------------------------------------
             .global __STACK_END
             .sect   .stack
+            
+;-------------------------------------------------------------------------------
+; Interrupt Vectors
+;-------------------------------------------------------------------------------
+            .sect   ".reset"                ; MSP430 RESET Vector
+            .short  RESET
+            .sect   ".int05"
+            .short  ADC10_ISR
 
 ;------------------------------------------------------------------------------
 ; Global Variable declaraions
 ;------------------------------------------------------------------------------
-_byte .equ 1
-_word .equ 2
-			; Declaring a variable is a two-step process
-			; 	1) reserve memory with a name (variable)
-			;   2) declare the variable as global to make it "visable"
-			; Syntax Description
-			; [keyword to reserve memory]		[name of variable] , [size in bytes]
-			; .bss								word1              , _2 (_word is equated to 2)
-
-			; [keyword to declare the variable as global] 	[name of variable]
-			; .global 										word1
-
-			.bss   word1 , _word				; Reserve a word (2 bytes) named "word1"
-			.global word1
-			
-			.bss  array1 , (_word * 32)
-			.global array1
-
-			.bss   word2 , _word				; Reserve a word (2 bytes) named "word1"
-			.global word2
-
-			.bss	byte1, _byte
-			.global byte1
-
-			.bss	byte2, _byte
-			.global byte2
-
-			; .bss   ____, _word
-			; .global ____

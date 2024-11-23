@@ -1,5 +1,22 @@
 ;-------------------------------------------------------------------------------
-; MSP430 Assembler "variable example" for use with TI Code Composer Assmebler
+; MSP430 PWM Example for use with TI Code Composer Assmebler
+
+;   Modified version of code from TI
+;   MSP430G2xx3 Demo - Timer_A, PWM TA0, Up Mode, DCO SMCLK
+;
+;   Description: This program generates one PWM output on P1.6 using
+;   Timer_A configured for up mode. The value in CCR0, 512-1, defines the PWM
+;   period and the value in CCR1 the PWM duty cycles.
+;   ACLK = n/a, SMCLK = MCLK = TACLK = default DCO
+
+;                MSP430G2xx3
+;             -----------------
+;         /|\|              XIN|-
+;          | |                 |
+;          --|RST          XOUT|-
+;            |                 |
+;            |         P1.6/TA1|--> CCR1 - 75% PWM
+;
 ;-------------------------------------------------------------------------------*
             .cdecls C,LIST,"msp430.h"       ; Include device header file            
 ;-------------------------------------------------------------------------------
@@ -17,27 +34,37 @@
 ;-------------------------------------------------------------------------------
 RESET       mov.w   #__STACK_END,SP         ; Initialize stackpointer
 StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
-
+SetupP1     bis.b   #BIT6,&P1DIR            ; P1.6 output
+            bis.b   #BIT6,&P1SEL            ; P1.6 TA1 option
+SetupC0     mov.w   #512-1,&CCR0            ; PWM Period
+SetupC1     mov.w   #OUTMOD_7,&TA0CCTL1        ; CCR1 reset/set
+            mov.w   #384,&TA0CCR1              ; CCR1 PWM Duty Cycle	
+SetupTA     mov.w   #TASSEL_2+MC_1,&TA0CTL   ; SMCLK, upmode
 ;-------------------------------------------------------------------------------
-; Variable/register Initialization section
+; Variable/register tnitialization section
 ;-------------------------------------------------------------------------------
-			mov.w #0, R5
-			mov.w #01234h, R4
+            mov.w   #0, R5       
 ;-------------------------------------------------------------------------------
 ; Main loop here
 ;-------------------------------------------------------------------------------
 MAIN
-			mov.b R5, &byte1
-			mov.w #0x1234, &byte1
-			mov.w &byte1, &word1
-			mov.b R5,&byte1
-			mov.w #0x1234,&byte1
-			mov.w &byte1,&word1
-			mov.w R4, array1(R5)
-			inc.w R4  ; next value
-			add.w #0x02, R5  ; next location
-                                            
+            add     #1, R4
+            cmp     #50000, R4
+            jlo     sameduty
+            add     #1, R5
+            AND      #511, R5
+            
+sameduty:            
+            
+            mov.w   R5, &TA0CCR1
+            nop                             ; Required only for debugger
+
 			jmp MAIN
+;-------------------------------------------------------------------------------
+; Stack Pointer definition
+;-------------------------------------------------------------------------------
+            .global __STACK_END
+            .sect   .stack
             
 ;-------------------------------------------------------------------------------
 ; Interrupt Vectors
@@ -45,42 +72,6 @@ MAIN
             .sect   ".reset"                ; MSP430 RESET Vector
             .short  RESET
 
-
-;-------------------------------------------------------------------------------
-; Stack Pointer definition
-;-------------------------------------------------------------------------------
-            .global __STACK_END
-            .sect   .stack
-
 ;------------------------------------------------------------------------------
 ; Global Variable declaraions
 ;------------------------------------------------------------------------------
-_byte .equ 1
-_word .equ 2
-			; Declaring a variable is a two-step process
-			; 	1) reserve memory with a name (variable)
-			;   2) declare the variable as global to make it "visable"
-			; Syntax Description
-			; [keyword to reserve memory]		[name of variable] , [size in bytes]
-			; .bss								word1              , _2 (_word is equated to 2)
-
-			; [keyword to declare the variable as global] 	[name of variable]
-			; .global 										word1
-
-			.bss   word1 , _word				; Reserve a word (2 bytes) named "word1"
-			.global word1
-			
-			.bss  array1 , (_word * 32)
-			.global array1
-
-			.bss   word2 , _word				; Reserve a word (2 bytes) named "word1"
-			.global word2
-
-			.bss	byte1, _byte
-			.global byte1
-
-			.bss	byte2, _byte
-			.global byte2
-
-			; .bss   ____, _word
-			; .global ____

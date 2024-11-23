@@ -1,0 +1,41 @@
+#include "msp430.h"                     ; #define controlled include file
+
+NAME    main                    ; module name
+
+        PUBLIC  main                    ; make the main label vissible
+                                        ; outside this module
+        ORG     0FFFEh
+        DC16    init                    ; set reset vector to 'init' label
+
+        RSEG    CSTACK                  ; pre-declaration of segment
+        RSEG    CODE                    ; place program in 'CODE' segment
+
+init:   MOV     #SFE(CSTACK), SP        ; set up stack
+        MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
+        BIS.B   #BIT1, &P1SEL           ; enable TIMER A.0 
+        BIS.B   #BIT2, &P1DIR           ; configure as output
+        
+SetupTA 
+        MOV.W   #TASSEL_2+MC_2,&TACTL   ;
+
+        ; CM_1 Capture mode: 1 - pos. edge 
+        ; CCSIS_0  Capture input select 0 
+        ; Capture mode: On
+        mov.w   #CM_1 + CCIS_0 + SCS + CAP, &TA0CCTL0   ;        
+        
+        
+MAIN
+        add.w   #1, R5
+        cmp 	#5000, R5
+        jlo 	MAIN
+
+        xor.b  #BIT2, &P1OUT
+
+        mov.w  &TA0CCR0, R6
+        mov.w 	#0, &TA0R
+        mov.w   #0, R5
+        nop                             ; Required only for debugger
+        ; (endless loop)
+        END
+
+
