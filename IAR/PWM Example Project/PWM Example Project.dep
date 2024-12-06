@@ -5,63 +5,38 @@
     <configuration>
         <name>Debug</name>
         <outputs>
-            <file>$PROJ_DIR$\..\ex3_pwm.s43</file>
             <file>$PROJ_DIR$\asm.s43</file>
             <file>$PROJ_DIR$\Debug\Obj\ex3_pwm.r43</file>
-            <file>$TOOLKIT_DIR$\config\linker\lnk430g2553.xcl</file>
-            <file>$PROJ_DIR$\Debug\List\PWM Example Project.map</file>
-            <file>$TOOLKIT_DIR$\inc\msp430g2553.h</file>
-            <file>$PROJ_DIR$\..\ex3_pwm.inc</file>
-            <file>$PROJ_DIR$\Debug\Obj\asm.r43</file>
             <file>$PROJ_DIR$\Debug\Exe\PWM Example Project.d43</file>
+            <file>$PROJ_DIR$\..\ex3_pwm.s43</file>
+            <file>$PROJ_DIR$\Debug\Obj\asm.r43</file>
         </outputs>
         <file>
-            <name>$PROJ_DIR$\..\ex3_pwm.s43</name>
+            <name>[ROOT_NODE]</name>
             <outputs>
                 <tool>
-                    <name>A430</name>
+                    <name>XLINK</name>
                     <file> 2</file>
                 </tool>
             </outputs>
-            <inputs>
-                <tool>
-                    <name>A430</name>
-                    <file> 5</file>
-                </tool>
-            </inputs>
         </file>
         <file>
             <name>$PROJ_DIR$\asm.s43</name>
             <outputs>
                 <tool>
                     <name>A430</name>
-                    <file> 7</file>
-                </tool>
-            </outputs>
-        </file>
-        <file>
-            <name>[ROOT_NODE]</name>
-            <outputs>
-                <tool>
-                    <name>XLINK</name>
-                    <file> 8 4</file>
-                </tool>
-            </outputs>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\Debug\Exe\PWM Example Project.d43</name>
-            <outputs>
-                <tool>
-                    <name>XLINK</name>
                     <file> 4</file>
                 </tool>
             </outputs>
-            <inputs>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\ex3_pwm.s43</name>
+            <outputs>
                 <tool>
-                    <name>XLINK</name>
-                    <file> 3 2</file>
+                    <name>A430</name>
+                    <file> 1</file>
                 </tool>
-            </inputs>
+            </outputs>
         </file>
     </configuration>
     <configuration>

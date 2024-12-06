@@ -1,0 +1,16 @@
+{
+  "workspace": {
+    "path": "${workspaceFolder}\\IAR\\PWM Example Project\\PWM Example Project.eww"
+  },
+  "workspaces": {
+    "${workspaceFolder}\\IAR\\PWM Example Project\\PWM Example Project.eww": {
+      "configs": {},
+      "selected": {
+        "path": "${workspaceFolder}\\IAR\\PWM Example Project\\PWM Example Project.ewp"
+      }
+    }
+  },
+  "workbench": {
+    "path": "C:\\Program Files (x86)\\IAR Systems\\Embedded Workbench 8.4"
+  }
+}
